@@ -1,0 +1,112 @@
+<div class="jumbotron">
+
+<h3>Add User</h3>
+{{#if error}} <span>{{error}}</span>{{/if}}
+
+  <div class=row>
+    <div class="column">
+  <h5>First name:</h5>
+  <input type="text" name="firstname" id="fname" >
+  </div>
+  <div class="column">
+  <h5>Last name:</h5>
+  <input type="text" name="lastname" id="lname">
+  </div>
+  </div>
+
+<!-- Stream video via webcam -->
+<div class="row">
+  <div class="video-wrap col-md-6">
+    <video id="video" playsinline autoplay></video>
+    <!-- Trigger canvas web API -->
+    <div class="controller">
+      <button id="snap">Capture</button>
+    </div>  
+  </div>
+
+  <div class="col-md-6">
+  <!-- Webcam video snapshot -->
+  <canvas id="canvas" width="200" height="200"></canvas>
+      <g:form action="saveImage" id="saveSnapForm" name="saveSnapForm"><div hidden="">
+      <img id="snapToSave" name="snapToSave" src="" /></div>
+      <input hidden="" id="snapURL" name="snapURL" type="text" />
+      <button id="save" type="submit">save</button> 
+    </g:form>
+</div>
+
+<script>
+	'use strict';
+
+const constraints = {
+  audio: true,
+  video: {
+    width: 200, height: 200
+  }
+};
+
+// Access webcam
+async function init() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    handleSuccess(stream);
+  } catch (e) {
+    errorMsgElement.innerHTML = `navigator.getUserMedia error:${e.toString()}`;
+  }
+}
+// Success
+function handleSuccess(stream) {
+  window.stream = stream;
+  video.srcObject = stream;
+}
+// Load init
+init();
+// Draw image
+    // Grab elements, create settings, etc.
+    var canvas = document.getElementById("canvas"),
+        context = canvas.getContext("2d"),
+        video = document.getElementById("video"),
+        videoObj = { "video": true },
+        errBack = function(error) {
+            console.log("Video capture error: ", error.code); 
+        };
+
+//var image =  document.getElementById("snapToSave");
+var snapURL;
+//Function to capture image in canvas
+document.getElementById("snap").addEventListener("click", function() {
+    var canvas = document.getElementById("canvas"),
+    context = canvas.getContext("2d"),
+    video = document.getElementById("video");
+    context.drawImage(video, 0, 0, 200, 200);
+    var image =  document.getElementById("snapToSave");
+    image.src = canvas.toDataURL("image/png");
+    snapURL = image.src;
+    document.getElementById("snapURL").value=canvas.toDataURL("image/png");
+    console.log("** THIS IS IMAGE SOURCE:" + image.src);
+
+});
+
+const button = document.getElementById('save');
+button.addEventListener('click', async _ => {
+  var base64dataurl=document.getElementById("canvas").toDataURL();
+  var fname=document.getElementById("fname").value;
+  var lname=document.getElementById("lname").value;
+
+  console.log("This is base64dataurl:" + base64dataurl);
+  
+  fetch('/captureImage', {
+  method: 'POST', // or 'PUT'
+  body: JSON.stringify({url: base64dataurl, fname: fname, lname: lname}) , // data can be `string` or {object}!
+  headers:{
+    'Content-Type': 'application/json'
+  }
+}).then(res => res.json())
+.then(response => console.log('Success:', JSON.stringify(response)))
+.catch(error => console.error('Error:', error));
+
+
+});
+
+</script>
+
+</div>
